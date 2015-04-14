@@ -1,3 +1,4 @@
+// D3.js projection from GeoJSON bounds
 function getProjection(geojson, width, height) {
   // From:
   // http://stackoverflow.com/questions/14492284/center-a-map-in-d3-given-a-geojson-object?answertab=active#tab-top
@@ -13,12 +14,12 @@ function getProjection(geojson, width, height) {
 
   // using the path determine the bounds of the current map and use
   // these to determine better values for the scale and translation
-  var bounds  = path.bounds(geojson);
-  var hscale  = scale * width  / (bounds[1][0] - bounds[0][0]);
-  var vscale  = scale * height / (bounds[1][1] - bounds[0][1]);
-  var scale   = (hscale < vscale) ? hscale : vscale;
-  var offset  = [width - (bounds[0][0] + bounds[1][0]) / 2,
-                      height - (bounds[0][1] + bounds[1][1]) / 2];
+  var bounds = path.bounds(geojson);
+  var hscale = scale * width  / (bounds[1][0] - bounds[0][0]);
+  var vscale = scale * height / (bounds[1][1] - bounds[0][1]);
+  var scale = (hscale < vscale) ? hscale : vscale;
+  // var offset  = [width - (bounds[0][0] + bounds[1][0]) / 2,
+  //                     height - (bounds[0][1] + bounds[1][1]) / 2];
   var offset = [0, 0];
 
   // new projection
@@ -26,9 +27,10 @@ function getProjection(geojson, width, height) {
     .scale(scale).translate(offset);
   path = path.projection(projection);
 
-  return projection
+  return projection;
 }
 
+// Use D3.js projection to create array of Three.js points/vectors from GeoJSON ring
 function ringToPoints(ring, projection) {
   return ring.map(function(point) {
     var projected = projection(point);
@@ -36,6 +38,7 @@ function ringToPoints(ring, projection) {
   });
 }
 
+// Create Three.js polygon from GeoJSON Polygon
 function createPolygonShape(polygon, projection) {
   var outerRing = polygon[0];
   var points = ringToPoints(outerRing, projection);
