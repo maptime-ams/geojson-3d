@@ -60,52 +60,26 @@
 				scene = new THREE.Scene();
 				var material =  new THREE.MeshLambertMaterial({color:0xffffff, shading: THREE.FlatShading } );
 
-        var width = 1000,
-            height = 1000;
+        var width = 1000;
+        var height = 1000;
 
-        d3.json('data/water.amsterdam.geojson', function(json) {
+        var url = 'data/water.amsterdam.geojson';
+        var url = 'data/municipalities.topojson';
+
+        d3.json(url, function(json) {
           if (json.type === 'FeatureCollection') {
 
           } else if (json.type === 'Topology') {
-
             var geojson = topojson.merge(json, json.objects.gem.geometries);
 
             var projection = getProjection(geojson, width, height)
 
             Object.keys(json.objects).forEach(function(key) {
               json.objects[key].geometries.forEach(function(object) {
-                var group = new THREE.Group();
-                scene.add(group);
-
                 var feature = topojson.feature(json, object);
-
-                var color = 'white';
-                var height = feature.properties.AANT_INW / 5000;
-
-                var extrudeSettings = {
-                  amount: height,
-                  bevelEnabled: false,
-                  bevelSegments: 2,
-                  steps: 2,
-                  bevelSize: 1,
-                  bevelThickness: 1
-                };
-
-                if (feature.geometry.type === 'Polygon') {
-                  var shape = createPolygonShape(feature.geometry.coordinates, projection);
-                  addShape(group, shape, extrudeSettings, color, 0, 0, height, Math.PI, 0, 0, 1);
-                } else if (feature.geometry.type === 'MultiPolygon') {
-                  feature.geometry.coordinates.forEach(function(polygon) {
-                    var shape = createPolygonShape(polygon, projection);
-                    addShape(group, shape, extrudeSettings, color, 0, 0, height, Math.PI, 0, 0, 1);
-                  });
-                } else {
-                  console.log('This tutorial only renders Polygons and MultiPolygons')
-                }
-
+                addFeature(feature, projection);
               });
       				render();
-
             });
           }  else {
             console.log('This tutorial only renders TopoJSON and GeoJSON FeatureCollections')
@@ -132,6 +106,35 @@
 				window.addEventListener('resize', onWindowResize, false );
 				render();
 			}
+
+      function addFeature(feature, projection) {
+        var group = new THREE.Group();
+        scene.add(group);
+
+        var color = 'white';
+        var height = feature.properties.AANT_INW / 5000;
+
+        var extrudeSettings = {
+          amount: height,
+          bevelEnabled: false,
+          bevelSegments: 2,
+          steps: 2,
+          bevelSize: 1,
+          bevelThickness: 1
+        };
+
+        if (feature.geometry.type === 'Polygon') {
+          var shape = createPolygonShape(feature.geometry.coordinates, projection);
+          addShape(group, shape, extrudeSettings, color, 0, 0, height, Math.PI, 0, 0, 1);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+          feature.geometry.coordinates.forEach(function(polygon) {
+            var shape = createPolygonShape(polygon, projection);
+            addShape(group, shape, extrudeSettings, color, 0, 0, height, Math.PI, 0, 0, 1);
+          });
+        } else {
+          console.log('This tutorial only renders Polygons and MultiPolygons')
+        }
+      }
 
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
