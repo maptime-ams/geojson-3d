@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			3D GeoJSON - Maptime AMS #6
+		</title>
+		<link rel="stylesheet" href="css/style.css">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="js/three.min.js"></script>
+		<script src="js/TrackballControls.js"></script>
+		<script src="js/Detector.js"></script>
+	</head>
+	<body>
+		<div id="container"></div>
+		<div id="info">
+			MOVE mouse &amp; press LEFT/A: rotate, MIDDLE/S: zoom, RIGHT/D: pan
+		</div>
+		<script>
+
+      function addShape(group, shape, extrudeSettings, color, x, y, z, rx, ry, rz, s) {
+  			var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+				var points = shape.createPointsGeometry();
+
+  			var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: color}));
+  			mesh.position.set(x, y, z);
+  			mesh.rotation.set(rx, ry, rz);
+  			mesh.scale.set(s, s, s);
+  			group.add(mesh);
+
+        // solid line
+        // var line = new THREE.Line( points, new THREE.LineBasicMaterial( { color: color, linewidth: 3 } ) );
+        // line.position.set( x, y, z - 25 );
+        // line.rotation.set( rx, ry, rz );
+        // line.scale.set( s, s, s );
+        // group.add( line );
+      }
+
+			if (!Detector.webgl) {
+        Detector.addGetWebGLMessage();
+      }
+
+			var container;
+			var camera, controls, scene, renderer;
+			var cross;
+			init();
+			animate();
+
+			function init() {
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+				camera.position.z = 500;
+				controls = new THREE.TrackballControls(camera);
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;
+				controls.noZoom = false;
+				controls.noPan = false;
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3;
+				controls.keys = [ 65, 83, 68 ];
+				controls.addEventListener( 'change', render );
+				// world
+				scene = new THREE.Scene();
+				//scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+				var geometry = new THREE.CylinderGeometry( 0, 10, 30, 4, 1 );
+				var material =  new THREE.MeshLambertMaterial( { color:0xffffff, shading: THREE.FlatShading } );
+        // for ( var i = 0; i < 500; i ++ ) {
+        //   var mesh = new THREE.Mesh( geometry, material );
+        //   mesh.position.x = ( Math.random() - 0.5 ) * 1000;
+        //   mesh.position.y = ( Math.random() - 0.5 ) * 1000;
+        //   mesh.position.z = ( Math.random() - 0.5 ) * 1000;
+        //   mesh.updateMatrix();
+        //   mesh.matrixAutoUpdate = false;
+        //   scene.add( mesh );
+        // }
+
+        var width = 1000,
+            height = 1000;
+
+        d3.json('data/municipalities.topojson', function(json) {
+
+          if (json.type === 'Topology') {
+
+            var geojson = topojson.merge(json, json.objects.gem.geometries);
+
+            var center = d3.geo.centroid(geojson)
+            var scale  = 150;
+            var offset = [width/2, height/2];
+            var projection = d3.geo.mercator().scale(scale).center(center)
+                  .translate(offset);
+
+            // create the path
+            var path = d3.geo.path().projection(projection);
+
+            // using the path determine the bounds of the current map and use
+            // these to determine better values for the scale and translation
+            var bounds  = path.bounds(geojson);
+            var hscale  = scale * width  / (bounds[1][0] - bounds[0][0]);
+            var vscale  = scale * height / (bounds[1][1] - bounds[0][1]);
+            var scale   = (hscale < vscale) ? hscale : vscale;
+            var offset  = [width - (bounds[0][0] + bounds[1][0]) / 2,
+                                height - (bounds[0][1] + bounds[1][1]) / 2];
+            var offset = [0, 0];
+            console.log(bounds)
+            // new projection
+            projection = d3.geo.mercator().center(center)
+              .scale(scale).translate(offset);
+            path = path.projection(projection);
+
+            var extrudeSettings = {
+              amount: 10,
+              bevelEnabled: false,
+              bevelSegments: 2,
+              steps: 2,
+              bevelSize: 1,
+              bevelThickness: 1
+            };
+
+            function ringToPoints(ring) {
+              return ring.map(function(point) {
+                var projected = projection(point);
+                return new THREE.Vector2(projected[0], projected[1]);
+              });
+            }
+
+            function createPolygonShape(polygon) {
+              var outerRing = polygon[0];
+              var points = ringToPoints(outerRing);
+              var polygonShape = new THREE.Shape(points);
+
+              polygon.slice(1).forEach(function(hole) {
+                points = ringToPoints(hole);
+                var holeShape = new THREE.Shape(points);
+                polygonShape.holes.push(holeShape);
+              });
+
+              return polygonShape;
+            }
+
+            Object.keys(json.objects).forEach(function(key) {
+              json.objects[key].geometries.forEach(function(object) {
+                var group = new THREE.Group();
+                scene.add(group);
+
+                var feature = topojson.feature(json, object);
+
+
+                var color = feature.properties.OPP_TOT;
+
+                if (feature.geometry.type === 'Polygon') {
+                  var shape = createPolygonShape(feature.geometry.coordinates);
+                  addShape(group, shape, extrudeSettings, color, 0, 0, 0, Math.PI, 0, 0, 1);
+                } else if (feature.geometry.type === 'MultiPolygon') {
+                  feature.geometry.coordinates.forEach(function(polygon) {
+                    var shape = createPolygonShape(polygon);
+                    addShape(group, shape, extrudeSettings, color, 0, 0, 0, Math.PI, 0, 0, 1);
+                  });
+                }
+
+              });
+      				render();
+
+            });
+          }
+
+
+        });
+
+				// lights
+				light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 1, 1, 1 );
+				scene.add( light );
+				light = new THREE.DirectionalLight( 0x002288 );
+				light.position.set( -1, -1, -1 );
+				scene.add( light );
+				light = new THREE.AmbientLight( 0x222222 );
+				scene.add( light );
+				// renderer
+				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				//renderer.setClearColor( scene.fog.color );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				render();
+			}
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				controls.handleResize();
+				render();
+			}
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update();
+			}
+			function render() {
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>

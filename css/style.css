@@ -1,0 +1,21 @@
+body {
+	color: #000;
+	font-family:Monospace;
+	font-size:13px;
+	text-align:center;
+	font-weight: bold;
+	background-color: #fff;
+	margin: 0px;
+	overflow: hidden;
+}
+
+#info {
+	color:#000;
+	position: absolute;
+	top: 0px; width: 100%;
+	padding: 5px;
+}
+
+a {
+	color: red;
+}
