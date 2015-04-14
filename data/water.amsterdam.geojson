@@ -144422,21 +144422,6 @@
           ]
         ]
       }
-    },
-    {
-      "type": "Feature",
-      "id": "node/1732952060",
-      "properties": {
-        "@id": "node/1732952060",
-        "leisure": "slipway"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.9447526,
-          52.3858576
-        ]
-      }
     }
   ]
 }
