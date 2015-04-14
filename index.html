@@ -63,9 +63,10 @@
         var width = 1000,
             height = 1000;
 
-        d3.json('data/municipalities.topojson', function(json) {
+        d3.json('data/water.amsterdam.geojson', function(json) {
+          if (json.type === 'FeatureCollection') {
 
-          if (json.type === 'Topology') {
+          } else if (json.type === 'Topology') {
 
             var geojson = topojson.merge(json, json.objects.gem.geometries);
 
@@ -106,6 +107,8 @@
       				render();
 
             });
+          }  else {
+            console.log('This tutorial only renders TopoJSON and GeoJSON FeatureCollections')
           }
         });
 
