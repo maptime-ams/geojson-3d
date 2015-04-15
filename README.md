@@ -101,6 +101,10 @@ Example Overpass query:
     (._;>;);
     out;
 
+## Colors!
+
+Use http://colorbrewer2.org/!
+
 ## TopoJSON
 
 You can convert large GeoJSON files to [TopoJSON](https://github.com/mbostock/topojson), this will make them much smaller and easier to handle for web browsers. (And you can convert Shapefiles to GeoJSON with [shp2json](https://github.com/substack/shp2json).)
