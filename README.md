@@ -4,6 +4,8 @@ http://maptime-ams.github.io/geojson-3d/
 
 Display GeoJSON in 3D in the browser, using [Three.js](http://threejs.org/). Made for [Maptime Amsterdam #6](http://www.meetup.com/Maptime-AMS/events/220184217/).
 
+Use `git clone https://github.com/maptime-ams/geojson-3d.git` to clone this tutorial, run a webserver in the project's directory (`python -m SimpleHTTPServer`, for example), and open [http://localhost:8000](http://localhost:8000). Edit [`index.html`](index.html) to tweak the lights, materials and camera used in this tutorial. Some basic Three.js materials are included in the source code. You can set a Feature's material in the `addFeature` function.
+
 ![](images/municipalities.jpg)
 
 ## Usage
@@ -46,7 +48,7 @@ function(d) {
 }
 ```
 
-```
+```js
 function(d) {
   var color = d3.scale.ordinal()
     .range([
@@ -72,6 +74,12 @@ function(d) {
 - [Growth of the city of Breda](http://maptime-ams.github.io/geojson-3d/#url=data%2Fbreda.json&color=function(d)%20%7B%0A%20%20if%20(d.jaar%20%3C%3D%201200)%20%7B%0A%20%20%20%20return%20'%2367001f'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201350)%20%7B%0A%20%20%20%20return%20'%23b2182b'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201500)%20%7B%0A%20%20%20%20return%20'%23d6604d'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201650)%20%7B%0A%20%20%20%20return%20'%23f4a582'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201750)%20%7B%0A%20%20%20%20return%20'%23fddbc7'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201850)%20%7B%0A%20%20%20%20return%20'%23d1e5f0'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201900)%20%7B%0A%20%20%20%20return%20'%2392c5de'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201950)%20%7B%0A%20%20%20%20return%20'%234393c3'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201980)%20%7B%0A%20%20%20%20return%20'%232166ac'%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%202010)%20%7B%0A%20%20%20%20return%20'%23053061'%3B%0A%20%20%7D%0A%7D&height=function(d)%20%7B%0A%20%20if%20(d.jaar%20%3C%3D%201200)%20%7B%0A%20%20%20%20return%20%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201350)%20%7B%0A%20%20%20%20return%2090%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201500)%20%7B%0A%20%20%20%20return%2080%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201650)%20%7B%0A%20%20%20%20return%2070%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201750)%20%7B%0A%20%20%20%20return%2060%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201850)%20%7B%0A%20%20%20%20return%2050%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201900)%20%7B%0A%20%20%20%20return%2040%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201950)%20%7B%0A%20%20%20%20return%2030%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%201980)%20%7B%0A%20%20%20%20return%2020%3B%0A%20%20%7D%20else%20if%20(d.jaar%20%3C%3D%202010)%20%7B%0A%20%20%20%20return%2010%3B%0A%20%20%7D%0A%7D) (uses [`breda.json`](data/breda.json), from [Histograph](http://histograph.io/viewer/#search=breda type=hg:Place))
 
 ![](images/breda.jpg)
+
+## Disable Three.js warnings
+
+You can disable warnings in your browsers' developer console:
+
+![](images/disable-warnings.jpg)
 
 ## Useful links
 

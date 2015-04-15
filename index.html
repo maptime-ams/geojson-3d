@@ -65,7 +65,39 @@
 
       var materials = {
         phong: function(color) {
-          return new THREE.MeshPhongMaterial({ color: color, side: THREE.DoubleSide});
+          return new THREE.MeshPhongMaterial({
+            color: color, side: THREE.DoubleSide
+//	phong : new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 60, shading: THREE.SmoothShading, transparent:true  }),
+
+          });
+        },
+        meshLambert: function(color) {
+          return new THREE.MeshLambertMaterial({
+            color: color,
+            specular: 0x009900,
+            shininess: 30,
+            shading: THREE.SmoothShading,
+            transparent:true
+          });
+        },
+        meshWireFrame: function(color) {
+          return new THREE.MeshBasicMaterial({
+             color: color,
+            specular: 0x009900,
+            shininess: 30,
+            shading: THREE.SmoothShading,
+            wireframe:true,
+            transparent:true
+          });
+        },
+        meshBasic: function(color) {
+          return new THREE.MeshBasicMaterial({
+            color: color,
+            specular: 0x009900,
+            shininess: 30,
+            shading: THREE.SmoothShading,
+            transparent: true
+          });
         }
       };
 
@@ -75,6 +107,7 @@
 
       var container;
       var camera, controls, scene, renderer;
+      var light, spotLight, ambientLight;
       var cross;
 
       function onWindowResize() {
@@ -169,17 +202,31 @@
         light = new THREE.DirectionalLight(0xffffff);
         light.position.set(1, 1, 1);
         scene.add(light);
-        light = new THREE.DirectionalLight(0x002288);
-        light.position.set(-1, -1, -1);
-        scene.add(light);
-        light = new THREE.AmbientLight(0x333333);
-        scene.add(light);
+
+        spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-1000, -1000, 1000);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        ambientLight = new THREE.AmbientLight(0x333333);
+        scene.add(ambientLight);
 
         // Renderer
         renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
+
+        // Shadows
+        renderer.shadowMapEnabled = true;
+        renderer.shadowMapSoft = true;
+        renderer.shadowCameraNear = 1;
+        renderer.shadowCameraFar = camera.far;
+        renderer.shadowCameraFov = 60;
+        renderer.shadowMapBias = 0.0025;
+        renderer.shadowMapDarkness = 0.5;
+        renderer.shadowMapWidth = 1024;
+        renderer.shadowMapHeight = 1024;
 
         window.addEventListener('resize', onWindowResize, false);
         onWindowResize();
@@ -190,6 +237,11 @@
         var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
 
         var mesh = new THREE.Mesh(geometry, materials[material](color));
+
+        // Add shadows
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
         mesh.position.set(x, y, z);
         mesh.rotation.set(rx, ry, rz);
         mesh.scale.set(s, s, s);
@@ -220,13 +272,15 @@
           bevelEnabled: false
         };
 
+        var material = 'meshBasic';
+
         if (feature.geometry.type === 'Polygon') {
           var shape = createPolygonShape(feature.geometry.coordinates, projection);
-          addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, amount, Math.PI, 0, 0, 1);
+          addShape(group, shape, extrudeSettings, material, color, 0, 0, amount, Math.PI, 0, 0, 1);
         } else if (feature.geometry.type === 'MultiPolygon') {
           feature.geometry.coordinates.forEach(function(polygon) {
             var shape = createPolygonShape(polygon, projection);
-            addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, amount, Math.PI, 0, 0, 1);
+            addShape(group, shape, extrudeSettings, material, color, 0, 0, amount, Math.PI, 0, 0, 1);
           });
         } else {
           console.log('This tutorial only renders Polygons and MultiPolygons')
