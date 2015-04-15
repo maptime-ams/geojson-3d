@@ -1,5 +1,7 @@
 # Maptime Amsterdam #6: GeoJSON 3D!
 
+http://maptime-ams.github.io/geojson-3d/
+
 Display GeoJSON in 3D in the browser, using [Three.js](http://threejs.org/). Made for [Maptime Amsterdam #6](http://www.meetup.com/Maptime-AMS/events/220184217/).
 
 ![](images/municipalities.jpg)
