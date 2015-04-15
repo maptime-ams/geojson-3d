@@ -6,6 +6,65 @@ Display GeoJSON in 3D in the browser, using [Three.js](http://threejs.org/). Mad
 
 ![](images/municipalities.jpg)
 
+## Usage
+
+With http://maptime-ams.github.io/geojson-3d/, you can load a GeoJSON or TopoJSON file from a URL, and style the features using Javascript functions (just like D3).
+
+Simple function, always return the same color:
+
+```js
+function(d) {
+  return '#0ef1f4';
+}
+```
+
+Simple function, always return the same color:
+
+```js
+function(d) {
+  if (d.jaar <= 1200) {
+    return '#67001f';
+  } else if (d.jaar <= 1350) {
+    return '#b2182b';
+  } else if (d.jaar <= 1500) {
+    return '#d6604d';
+  } else if (d.jaar <= 1650) {
+    return '#f4a582';
+  } else if (d.jaar <= 1750) {
+    return '#fddbc7';
+  } else if (d.jaar <= 1850) {
+    return '#d1e5f0';
+  } else if (d.jaar <= 1900) {
+    return '#92c5de';
+  } else if (d.jaar <= 1950) {
+    return '#4393c3';
+  } else if (d.jaar <= 1980) {
+    return '#2166ac';
+  } else if (d.jaar <= 2010) {
+    return '#053061';
+  }
+}
+```
+
+```
+function(d) {
+  var color = d3.scale.ordinal()
+    .range([
+      "#ffffe5",
+      "#f7fcb9",
+      "#d9f0a3",
+      "#addd8e",
+      "#78c679",
+      "#41ab5d",
+      "#238443",
+      "#006837",
+      "#004529"
+    ])
+    .domain(d3.range(0, 8000));
+  return color(d.BEV_DICHTH);
+}
+```
+
 ## Examples
 
 - [Dutch municipalities](http://maptime-ams.github.io/geojson-3d/#url=data%2Fmunicipalities.json&color=function(d)%20%7B%0A%20%20var%20color%20%3D%20d3.scale.ordinal()%0A%20%20%20%20.range(%5B%0A%20%20%20%20%20%20%22%23ffffe5%22%2C%0A%20%20%20%20%20%20%22%23f7fcb9%22%2C%0A%20%20%20%20%20%20%22%23d9f0a3%22%2C%0A%20%20%20%20%20%20%22%23addd8e%22%2C%0A%20%20%20%20%20%20%22%2378c679%22%2C%0A%20%20%20%20%20%20%22%2341ab5d%22%2C%0A%20%20%20%20%20%20%22%23238443%22%2C%0A%20%20%20%20%20%20%22%23006837%22%2C%0A%20%20%20%20%20%20%22%23004529%22%0A%20%20%20%20%5D)%0A%20%20%20%20.domain(d3.range(0%2C%208000))%3B%0A%20%20return%20color(d.BEV_DICHTH)%3B%0A%7D&height=function(d)%20%7B%0A%20%20return%20d.AANT_INW%20%2F%205000%3B%0A%7D) (uses [`municipalities.json`](data/municipalities.json))
