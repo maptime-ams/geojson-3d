@@ -119,26 +119,28 @@
         var url = document.getElementById('url').value
 
         d3.json(url, function(json) {
+
+          var functions = {};
+
+          try {
+            var colorFunctionString = cmColor.getValue();
+            functions.color = eval('(' + colorFunctionString + ')');
+          } catch(err) {
+            console.log(err);
+            functions.color = eval('(' + defaults.color + ')');
+          }
+
+          try {
+            var heightFunctionString = cmHeight.getValue();
+            functions.height = eval('(' + heightFunctionString + ')');
+          } catch(err) {
+            console.log(err);
+            functions.height = eval('(' + defaults.height + ')');
+          }
+
           if (json.type === 'FeatureCollection') {
 
             var projection = getProjection(json, width, height);
-            var functions = {};
-
-            try {
-              var colorFunctionString = cmColor.getValue();
-              functions.color = eval('(' + colorFunctionString + ')');
-            } catch(err) {
-              console.log(err);
-              functions.color = eval('(' + defaults.color + ')');
-            }
-
-            try {
-              var heightFunctionString = cmHeight.getValue();
-              functions.height = eval('(' + heightFunctionString + ')');
-            } catch(err) {
-              console.log(err);
-              functions.height = eval('(' + defaults.height + ')');
-            }
 
             json.features.forEach(function(feature) {
               addFeature(feature, projection, functions);
@@ -152,7 +154,7 @@
             Object.keys(json.objects).forEach(function(key) {
               json.objects[key].geometries.forEach(function(object) {
                 var feature = topojson.feature(json, object);
-                addFeature(feature, projection);
+                addFeature(feature, projection, functions);
               });
             });
 
