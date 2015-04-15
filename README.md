@@ -20,27 +20,22 @@ Display GeoJSON in 3D in the browser, using [Three.js](http://threejs.org/). Mad
 
 ## Data
 
+- [Centraal Bureau voor de Statistiek](http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-regionaal/publicaties/geografische-data/archief/2015/wijk-en-buurtkaart-2014-art.htm)
+- [Natural Earth](http://www.naturalearthdata.com/)
+- OpenStreetMap, using [Overpass Turbo](http://overpass-turbo.eu/) (and choosing _Save as GeoJSON..._)
 
-cbs-data
-http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-regionaal/publicaties/geografische-data/archief/2015/wijk-en-buurtkaart-2014-art.htm
+Example Overpass query:
 
+    [out:json];
+    way[natural=water](around:5000,52.36740138260664,4.8985666036605835);
+    (._;>;);
+    out;
 
+## TopoJSON
+
+You can convert large GeoJSON files to [TopoJSON](https://github.com/mbostock/topojson), this will make them much smaller and easier to handle for web browsers. (And you can convert Shapefiles to GeoJSON with [shp2json](https://github.com/substack/shp2json).)
+
+Usage:
 ```
-topojson -p -s 1e-8 -o gem.topojson gem.geojson
+topojson -p -s 1e-8 -o municipalities.topojson municipalities.geojson
 ```
-
-
-
-http://overpass-turbo.eu/
-
-[out:json];
-way[natural=water](around:5000,52.36740138260664,4.8985666036605835);
-(._;>;);
-out;
-
-
-Save as GeoJSON
-
-
-
-http://www.naturalearthdata.com/
