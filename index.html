@@ -5,28 +5,48 @@
     <title>
       3D GeoJSON - Maptime AMS #6
     </title>
-    <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="css/skeleton.css">
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/codemirror.css">
     <script src="js/lib/d3.v3.min.js" charset="utf-8"></script>
     <script src="js/lib/topojson.v1.min.js"></script>
     <script src="js/lib/three.min.js"></script>
     <script src="js/lib/TrackballControls.js"></script>
     <script src="js/lib/Detector.js"></script>
     <script src="js/lib/turf.min.js"></script>
+    <script src="js/codemirror.js"></script>
+    <script src="js/javascript.js"></script>
     <script src="js/geo.js"></script>
   </head>
   <body>
     <div id="sidebar">
-      <textarea id="url">data/municipalities.topojson</textarea>
-      <textarea id="color">
-      </textarea>
-      <textarea id="height">
-      </textarea>
+      <header>
+        <h1>Maptime Amsterdam #6: GeoJSON 3D</h1>
+        <span>See <a href="https://github.com/maptime-ams/geojson-3d">GitHub</a> for more information!</span>
+        <input type="text" id="url" placeholder="URL pointing to GeoJSON or TopoJSON file"></input>
+      </header>
+
+      <div class="textareas">
+        <textarea id="color">
+        </textarea>
+        <textarea id="height">
+        </textarea>
+      </div>
+      <div class="buttons">
+        <button id="submit">Submit!</button>
+      </div>
     </div>
     <div id="webgl"></div>
     <script>
+      var disableHashChange = false;
 
-      var defaultFunctions = {
+      var cmColor;
+      var cmHeight;
+
+      var defaults = {
+        url: 'data/municipalities.json',
         color:
           'function(d) {\n' +
           '  return Math.random() * 16777216;\n' +
@@ -35,6 +55,12 @@
           'function(d) {\n' +
           '  return Math.random()\n' +
           '}'
+      };
+
+      var latest = {
+        url: null,
+        color: null,
+        height: null
       };
 
       var materials = {
@@ -50,8 +76,6 @@
       var container;
       var camera, controls, scene, renderer;
       var cross;
-      init();
-      animate();
 
       function onWindowResize() {
         camera.aspect = container.clientWidth / container.clientHeight;
@@ -73,8 +97,8 @@
       function init() {
         container = document.getElementById('webgl');
 
-        camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 1, 100000);
-        camera.position.z = 500;
+        camera = new THREE.PerspectiveCamera( 70, container.clientWidth / container.clientHeight, 0.1, 10000);
+        camera.position.z = Math.min(container.clientWidth, container.clientHeight);
         controls = new THREE.TrackballControls(camera, container);
         controls.rotateSpeed = 1.0;
         controls.zoomSpeed = 1.2;
@@ -88,8 +112,8 @@
 
         // World
         scene = new THREE.Scene();
-        var width = 1000;
-        var height = 1000;
+        var width = container.clientWidth;
+        var height = container.clientHeight;
 
         // Read url from url textarea
         var url = document.getElementById('url').value
@@ -98,8 +122,26 @@
           if (json.type === 'FeatureCollection') {
 
             var projection = getProjection(json, width, height);
+            var functions = {};
+
+            try {
+              var colorFunctionString = cmColor.getValue();
+              functions.color = eval('(' + colorFunctionString + ')');
+            } catch(err) {
+              console.log(err);
+              functions.color = eval('(' + defaults.color + ')');
+            }
+
+            try {
+              var heightFunctionString = cmHeight.getValue();
+              functions.height = eval('(' + heightFunctionString + ')');
+            } catch(err) {
+              console.log(err);
+              functions.height = eval('(' + defaults.height + ')');
+            }
+
             json.features.forEach(function(feature) {
-              addFeature(feature, projection);
+              addFeature(feature, projection, functions);
             });
 
           } else if (json.type === 'Topology') {
@@ -152,43 +194,37 @@
         group.add(mesh);
       }
 
-      function addFeature(feature, projection) {
+      function addFeature(feature, projection, functions) {
         var group = new THREE.Group();
         scene.add(group);
 
         var color;
-        var height;
+        var amount;
 
         try {
-          var colorFunctionString = document.getElementById('color').value;
-          var colorFunction = eval('(' + colorFunctionString + ')');
-          color = colorFunction(feature.properties);
+          color = functions.color(feature.properties);
         } catch(err) {
-          var colorFunction = eval('(' + defaultFunctions.color + ')');
-          color = colorFunction(feature.properties);
+          console.log(err);
         }
 
         try {
-          var heightFunctionString = document.getElementById('height').value;
-          var heightFunction = eval('(' + heightFunctionString + ')');
-          height = heightFunction(feature.properties);
+          amount = functions.height(feature.properties);
         } catch(err) {
-          var heightFunction = eval('(' + defaultFunctions.height + ')');
-          height = heightFunction(feature.properties);
+          console.log(err);
         }
 
         var extrudeSettings = {
-          amount: height,
+          amount: amount,
           bevelEnabled: false
         };
 
         if (feature.geometry.type === 'Polygon') {
           var shape = createPolygonShape(feature.geometry.coordinates, projection);
-          addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, height, Math.PI, 0, 0, 1);
+          addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, amount, Math.PI, 0, 0, 1);
         } else if (feature.geometry.type === 'MultiPolygon') {
           feature.geometry.coordinates.forEach(function(polygon) {
             var shape = createPolygonShape(polygon, projection);
-            addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, height, Math.PI, 0, 0, 1);
+            addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, amount, Math.PI, 0, 0, 1);
           });
         } else {
           console.log('This tutorial only renders Polygons and MultiPolygons')
@@ -196,8 +232,99 @@
       }
 
       // Set textareas to contain default functions
-      document.getElementById('color').value = defaultFunctions.color;
-      document.getElementById('height').value = defaultFunctions.height;
+      document.getElementById('color').value = defaults.color;
+      document.getElementById('height').value = defaults.height;
+      document.getElementById('url').value = defaults.url;
+
+      // Initialize CodeMirror:
+      cmColor = CodeMirror.fromTextArea(document.getElementById('color'), {
+        lineNumbers: true,
+        mode: 'text/javascript'
+      });
+
+      cmHeight = CodeMirror.fromTextArea(document.getElementById('height'), {
+        lineNumbers: true,
+        mode: 'text/javascript'
+      });
+
+      d3.selectAll("#submit").on('click', function() {
+        // Check input!
+        latest = {
+          url: document.getElementById('url').value,
+          color: cmColor.getValue(),
+          height: cmHeight.getValue()
+        };
+
+        init();
+
+        updateHash();
+      });
+
+
+      function parseHash(hash) {
+        params = {};
+        hash.split("&").forEach(function(param) {
+          if (param.indexOf("=") > -1) {
+            var kv = param.split("=");
+            params[kv[0]] = decodeURIComponent(kv[1]);
+          }
+        });
+
+        // TODO: check params before setting
+        if (params.url) {
+          latest.url = params.url;
+          document.getElementById('url').value = params.url;
+        }
+
+        if (params.color) {
+          latest.color = params.color;
+          cmColor.setValue(params.color);
+        }
+
+        if (params.height) {
+          latest.height = params.height;
+          cmHeight.setValue(params.height);
+        }
+      }
+
+      function updateHash() {
+        disableHashChange = true;
+
+        var params = {};
+        if (latest.url) {
+          params.url = encodeURIComponent(latest.url);
+        }
+        if (latest.color) {
+          params.color = encodeURIComponent(latest.color);
+        }
+        if (latest.height) {
+          params.height = encodeURIComponent(latest.height);
+        }
+
+        var items = [];
+        for (param in params) {
+          items.push(param + '=' + params[param]);
+        }
+
+        location.hash = items.join('&');
+        setTimeout(function(){
+          disableHashChange = false;
+        }, 1000);
+      }
+
+      window.onhashchange = function() {
+        if (!disableHashChange) {
+          parseHash(location.hash.substring(1))
+        }
+      };
+
+      if (location.hash) {
+        parseHash(location.hash.substring(1));
+      }
+
+      // Initalize WebGL!
+      init();
+      animate();
     </script>
   </body>
 </html>
