@@ -67,6 +67,15 @@ function(d) {
 }
 ```
 
+If you don't remember your Feature's properties, you can use `console.log(d)` to output them to the developer console:
+
+```js
+function(d) {
+  console.log(d);
+  return 'red';
+}
+```
+
 ## Examples
 
 - [Dutch municipalities](http://maptime-ams.github.io/geojson-3d/#url=data%2Fmunicipalities.json&color=function(d)%20%7B%0A%20%20var%20color%20%3D%20d3.scale.ordinal()%0A%20%20%20%20.range(%5B%0A%20%20%20%20%20%20%22%23ffffe5%22%2C%0A%20%20%20%20%20%20%22%23f7fcb9%22%2C%0A%20%20%20%20%20%20%22%23d9f0a3%22%2C%0A%20%20%20%20%20%20%22%23addd8e%22%2C%0A%20%20%20%20%20%20%22%2378c679%22%2C%0A%20%20%20%20%20%20%22%2341ab5d%22%2C%0A%20%20%20%20%20%20%22%23238443%22%2C%0A%20%20%20%20%20%20%22%23006837%22%2C%0A%20%20%20%20%20%20%22%23004529%22%0A%20%20%20%20%5D)%0A%20%20%20%20.domain(d3.range(0%2C%208000))%3B%0A%20%20return%20color(d.BEV_DICHTH)%3B%0A%7D&height=function(d)%20%7B%0A%20%20return%20d.AANT_INW%20%2F%205000%3B%0A%7D) (uses [`municipalities.json`](data/municipalities.json))
