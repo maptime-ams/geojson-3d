@@ -12,37 +12,36 @@
     <script src="js/lib/three.min.js"></script>
     <script src="js/lib/TrackballControls.js"></script>
     <script src="js/lib/Detector.js"></script>
+    <script src="js/lib/turf.min.js"></script>
     <script src="js/geo.js"></script>
   </head>
   <body>
-    <div id="container"></div>
-    <div id="info">
-      MOVE mouse &amp; press LEFT/A: rotate, MIDDLE/S: zoom, RIGHT/D: pan
+    <div id="sidebar">
+      <textarea id="url">data/municipalities.topojson</textarea>
+      <textarea id="color">
+      </textarea>
+      <textarea id="height">
+      </textarea>
     </div>
+    <div id="webgl"></div>
     <script>
+
+      var defaultFunctions = {
+        color:
+          'function(d) {\n' +
+          '  return Math.random() * 16777216;\n' +
+          '}',
+        height:
+          'function(d) {\n' +
+          '  return Math.random()\n' +
+          '}'
+      };
 
       var materials = {
         phong: function(color) {
-          return new THREE.MeshPhongMaterial({ color: color, side: THREE.DoubleSide });
+          return new THREE.MeshPhongMaterial({ color: color, side: THREE.DoubleSide});
         }
       };
-
-      function addShape(group, shape, extrudeSettings, material, color, x, y, z, rx, ry, rz, s) {
-        var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-
-        var mesh = new THREE.Mesh(geometry, materials[material](color));
-        mesh.position.set(x, y, z);
-        mesh.rotation.set(rx, ry, rz);
-        mesh.scale.set(s, s, s);
-        group.add(mesh);
-
-        // var points = shape.createPointsGeometry();
-        //         var line = new THREE.Line( points, new THREE.LineBasicMaterial( { color: color, linewidth: 3 } ) );
-        // line.position.set( x, y, z - 25 );
-        // line.rotation.set( rx, ry, rz );
-        // line.scale.set( s, s, s );
-        // group.add( line );
-      }
 
       if (!Detector.webgl) {
         Detector.addGetWebGLMessage();
@@ -54,10 +53,29 @@
       init();
       animate();
 
+      function onWindowResize() {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        controls.handleResize();
+        render();
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+      }
+
+      function render() {
+        renderer.render(scene, camera);
+      }
+
       function init() {
-        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 100000 );
+        container = document.getElementById('webgl');
+
+        camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 1, 100000);
         camera.position.z = 500;
-        controls = new THREE.TrackballControls(camera);
+        controls = new THREE.TrackballControls(camera, container);
         controls.rotateSpeed = 1.0;
         controls.zoomSpeed = 1.2;
         controls.panSpeed = 0.8;
@@ -73,11 +91,8 @@
         var width = 1000;
         var height = 1000;
 
-        var url = 'data/water.amsterdam.geojson';
-        var url = 'data/municipalities.topojson';
-        // var url = 'data/countries.json';
-        // var url = 'data/hexagon.json';
-        // var url = 'gem.topojson';
+        // Read url from url textarea
+        var url = document.getElementById('url').value
 
         d3.json(url, function(json) {
           if (json.type === 'FeatureCollection') {
@@ -107,45 +122,69 @@
         });
 
         // Lights
-        light = new THREE.DirectionalLight( 0xffffff );
-        light.position.set( 1, 1, 1 );
-        scene.add( light );
-        light = new THREE.DirectionalLight( 0x002288 );
-        light.position.set( -1, -1, -1 );
-        scene.add( light );
-        light = new THREE.AmbientLight( 0x444 );
-        scene.add( light );
+        light = new THREE.DirectionalLight(0xffffff);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        light = new THREE.DirectionalLight(0x002288);
+        light.position.set(-1, -1, -1);
+        scene.add(light);
+        light = new THREE.AmbientLight(0x333333);
+        scene.add(light);
 
         // Renderer
-        renderer = new THREE.WebGLRenderer( { antialias: false } );
+        renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        container = document.getElementById( 'container' );
-        container.appendChild(renderer.domElement );
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
 
-        window.addEventListener('resize', onWindowResize, false );
+        window.addEventListener('resize', onWindowResize, false);
+        onWindowResize();
         render();
+      }
+
+      function addShape(group, shape, extrudeSettings, material, color, x, y, z, rx, ry, rz, s) {
+        var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
+        var mesh = new THREE.Mesh(geometry, materials[material](color));
+        mesh.position.set(x, y, z);
+        mesh.rotation.set(rx, ry, rz);
+        mesh.scale.set(s, s, s);
+        group.add(mesh);
       }
 
       function addFeature(feature, projection) {
         var group = new THREE.Group();
         scene.add(group);
 
-        var color = Math.random() * 16777216;
-        var height = 1;//Math.random() * 50 + 8;
+        var color;
+        var height;
+
+        try {
+          var colorFunctionString = document.getElementById('color').value;
+          var colorFunction = eval('(' + colorFunctionString + ')');
+          color = colorFunction(feature.properties);
+        } catch(err) {
+          var colorFunction = eval('(' + defaultFunctions.color + ')');
+          color = colorFunction(feature.properties);
+        }
+
+        try {
+          var heightFunctionString = document.getElementById('height').value;
+          var heightFunction = eval('(' + heightFunctionString + ')');
+          height = heightFunction(feature.properties);
+        } catch(err) {
+          var heightFunction = eval('(' + defaultFunctions.height + ')');
+          height = heightFunction(feature.properties);
+        }
 
         var extrudeSettings = {
           amount: height,
-          bevelEnabled: false,
-          //bevelSegments: 2,
-          // steps: 2,
-          // bevelSize: 1,
-          // bevelThickness: 1
+          bevelEnabled: false
         };
 
         if (feature.geometry.type === 'Polygon') {
           var shape = createPolygonShape(feature.geometry.coordinates, projection);
-            addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, height, Math.PI, 0, 0, 1);
+          addShape(group, shape, extrudeSettings, 'phong', color, 0, 0, height, Math.PI, 0, 0, 1);
         } else if (feature.geometry.type === 'MultiPolygon') {
           feature.geometry.coordinates.forEach(function(polygon) {
             var shape = createPolygonShape(polygon, projection);
@@ -156,22 +195,9 @@
         }
       }
 
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        controls.handleResize();
-        render();
-      }
-
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-      }
-
-      function render() {
-        renderer.render(scene, camera);
-      }
+      // Set textareas to contain default functions
+      document.getElementById('color').value = defaultFunctions.color;
+      document.getElementById('height').value = defaultFunctions.height;
     </script>
   </body>
 </html>

@@ -9,13 +9,22 @@ body {
 	overflow: hidden;
 }
 
-#info {
-	color:#000;
-	position: absolute;
-	top: 0px; width: 100%;
-	padding: 5px;
+#sidebar {
+  position: absolute;
+  left: 0;
+  width: 400px;
+  height: 100%;
 }
 
-a {
-	color: red;
+#webgl {
+  background-color: black;
+  position: absolute;
+  left: 400px;
+  right: 0;
+  height: 100%;
+}
+
+#sidebar textarea {
+  width: 100%;
+  height: 33.33%;
 }
