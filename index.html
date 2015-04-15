@@ -45,6 +45,9 @@
       var cmColor;
       var cmHeight;
 
+      // Store downloaded JSON in variable
+      var json;
+
       var defaults = {
         url: 'data/municipalities.json',
         color:
@@ -67,8 +70,7 @@
         phong: function(color) {
           return new THREE.MeshPhongMaterial({
             color: color, side: THREE.DoubleSide
-//	phong : new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 60, shading: THREE.SmoothShading, transparent:true  }),
-
+            //	phong : new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 60, shading: THREE.SmoothShading, transparent:true  }),
           });
         },
         meshLambert: function(color) {
@@ -145,58 +147,6 @@
 
         // World
         scene = new THREE.Scene();
-        var width = container.clientWidth;
-        var height = container.clientHeight;
-
-        // Read url from url textarea
-        var url = document.getElementById('url').value
-
-        d3.json(url, function(json) {
-
-          var functions = {};
-
-          try {
-            var colorFunctionString = cmColor.getValue();
-            functions.color = eval('(' + colorFunctionString + ')');
-          } catch(err) {
-            console.log(err);
-            functions.color = eval('(' + defaults.color + ')');
-          }
-
-          try {
-            var heightFunctionString = cmHeight.getValue();
-            functions.height = eval('(' + heightFunctionString + ')');
-          } catch(err) {
-            console.log(err);
-            functions.height = eval('(' + defaults.height + ')');
-          }
-
-          if (json.type === 'FeatureCollection') {
-
-            var projection = getProjection(json, width, height);
-
-            json.features.forEach(function(feature) {
-              addFeature(feature, projection, functions);
-            });
-
-          } else if (json.type === 'Topology') {
-
-            var geojson = topojson.merge(json, json.objects[Object.keys(json.objects)[0]].geometries);
-            var projection = getProjection(geojson, width, height);
-
-            Object.keys(json.objects).forEach(function(key) {
-              json.objects[key].geometries.forEach(function(object) {
-                var feature = topojson.feature(json, object);
-                addFeature(feature, projection, functions);
-              });
-            });
-
-          } else {
-            console.log('This tutorial only renders TopoJSON and GeoJSON FeatureCollections')
-          }
-
-          render();
-        });
 
         // Lights
         light = new THREE.DirectionalLight(0xffffff);
@@ -231,6 +181,86 @@
         window.addEventListener('resize', onWindowResize, false);
         onWindowResize();
         render();
+
+        update();
+      }
+
+      function clearGroups() {
+        if (json) {
+          if (json.type === 'FeatureCollection') {
+            json.features.forEach(function(feature) {
+              scene.remove(feature._group);
+            });
+          } else if (json.type === 'Topology') {
+            Object.keys(json.objects).forEach(function(key) {
+              json.objects[key].geometries.forEach(function(object) {
+                scene.remove(object._group);
+              });
+            });
+          }
+        }
+        render();
+      }
+
+      function update() {
+        clearGroups();
+
+        var width = container.clientWidth;
+        var height = container.clientHeight;
+
+        // Read url from url textarea
+        var url = document.getElementById('url').value
+
+        d3.json(url, function(data) {
+
+          json = data;
+
+          var functions = {};
+
+          try {
+            var colorFunctionString = cmColor.getValue();
+            functions.color = eval('(' + colorFunctionString + ')');
+          } catch(err) {
+            console.log(err);
+            functions.color = eval('(' + defaults.color + ')');
+          }
+
+          try {
+            var heightFunctionString = cmHeight.getValue();
+            functions.height = eval('(' + heightFunctionString + ')');
+          } catch(err) {
+            console.log(err);
+            functions.height = eval('(' + defaults.height + ')');
+          }
+
+          if (json.type === 'FeatureCollection') {
+
+            var projection = getProjection(json, width, height);
+
+            json.features.forEach(function(feature) {
+              var group = addFeature(feature, projection, functions);
+              feature._group = group;
+            });
+
+          } else if (json.type === 'Topology') {
+
+            var geojson = topojson.merge(json, json.objects[Object.keys(json.objects)[0]].geometries);
+            var projection = getProjection(geojson, width, height);
+
+            Object.keys(json.objects).forEach(function(key) {
+              json.objects[key].geometries.forEach(function(object) {
+                var feature = topojson.feature(json, object);
+                var group = addFeature(feature, projection, functions);
+                object._group = group;
+              });
+            });
+
+          } else {
+            console.log('This tutorial only renders TopoJSON and GeoJSON FeatureCollections')
+          }
+
+          render();
+        });
       }
 
       function addShape(group, shape, extrudeSettings, material, color, x, y, z, rx, ry, rz, s) {
@@ -272,7 +302,7 @@
           bevelEnabled: false
         };
 
-        var material = 'meshBasic';
+        var material = 'phong';
 
         if (feature.geometry.type === 'Polygon') {
           var shape = createPolygonShape(feature.geometry.coordinates, projection);
@@ -285,6 +315,8 @@
         } else {
           console.log('This tutorial only renders Polygons and MultiPolygons')
         }
+
+        return group;
       }
 
       // Set textareas to contain default functions
@@ -311,7 +343,7 @@
           height: cmHeight.getValue()
         };
 
-        init();
+        update();
 
         updateHash();
       });
